@@ -94,3 +94,11 @@ python run.py
 ```
 
 Then find the Mac's LAN IP with `ipconfig getifaddr en0` (or `en1`) and open `http://<LAN-IP>:5075` from the other device.
+
+## Production and CI/CD
+
+Production: **https://georgia.richmackos.com**
+
+`main` is push-to-deploy. GitHub Actions runs compilation/tests, synchronizes the repository to Lightsail while preserving production `.env`, `data/`, and `backups/`, invokes `richdeploy georgia`, and verifies the public health endpoint.
+
+See [`docs/PRODUCTION.md`](docs/PRODUCTION.md) for deployment details.
