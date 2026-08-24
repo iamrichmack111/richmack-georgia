@@ -1,1 +1,42 @@
-{% extends 'base.html' %}{% block head %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}{% block content %}<div class="map-head"><div><small>INTERACTIVE ATLAS</small><h1>Georgia Explorer Map</h1><p>Toggle curriculum layers and select features to connect place, history, water, and infrastructure.</p></div><div class="layer-buttons"><button data-layer="regions">Regions</button><button data-layer="water">Water</button><button data-layer="cities">Cities</button><button data-layer="infra">Infrastructure</button></div></div><div id="map"></div><p class="muted">Base map © OpenStreetMap contributors. Educational overlays are maintained separately so they can later work with offline or alternate basemaps.</p>{% endblock %}{% block scripts %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="{{url_for('static',filename='js/map.js')}}"></script>{% endblock %}
+{% extends 'base.html' %}
+{% block head %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}
+{% block content %}
+<div class="map-head">
+  <div><small>PHASE 2 • INTERACTIVE SYSTEMS ATLAS</small><h1>Georgia Explorer Map</h1><p>Study how terrain, water, transportation, cities, and infrastructure fit together. Turn layers on and off, then select features for deeper context.</p></div>
+  <div class="atlas-actions"><a class="btn secondary" href="/map">Explore</a>{% if session.user_id and session.role=='student' %}<a class="btn" href="/map?game=map-hunt">Map Hunt</a>{% endif %}</div>
+</div>
+<div class="atlas-shell {% if game_mode %}game-mode{% endif %}">
+  <aside class="atlas-sidebar">
+    <section>
+      <span class="tag">MAP LAYERS</span>
+      <div class="layer-stack">
+        <button class="layer-toggle active" data-layer="regions"><span>▰</span> Land Regions</button>
+        <button class="layer-toggle active" data-layer="mountains"><span>▲</span> Mountains</button>
+        <button class="layer-toggle active" data-layer="water"><span>≈</span> Rivers & Lakes</button>
+        <button class="layer-toggle active" data-layer="transport"><span>═</span> Transportation</button>
+        <button class="layer-toggle active" data-layer="infra"><span>◆</span> Infrastructure</button>
+        <button class="layer-toggle active" data-layer="cities"><span>●</span> Cities</button>
+      </div>
+    </section>
+    <section id="feature-card" class="feature-card">
+      <span class="tag">SELECT A FEATURE</span>
+      <h3>Explore Georgia as a system</h3>
+      <p>Click a river, highway, region, mountain, city, lake, airport, or port. The map will explain what it is and why it matters.</p>
+    </section>
+    {% if game_mode %}
+    <section id="challenge-panel" class="challenge-panel">
+      <span class="tag">MAP HUNT • LEVEL 2</span>
+      <div class="game-stat-row"><b id="game-progress">1 / 10</b><b id="game-score">0 correct</b></div>
+      <h3 id="challenge-prompt">Loading challenge…</h3>
+      <p id="challenge-hint" class="muted"></p>
+      <div id="game-feedback"></div>
+      <button id="next-challenge" class="btn" hidden>Next challenge</button>
+    </section>
+    {% endif %}
+    <section class="legend"><span class="tag">LEGEND</span><div><i class="legend-box region"></i> Physiographic region</div><div><i class="legend-line water"></i> River / waterway</div><div><i class="legend-line road"></i> Interstate / highway corridor</div><div><i class="legend-line rail"></i> Major rail corridor</div><div><i class="legend-dot infra"></i> Infrastructure</div></section>
+  </aside>
+  <div id="map"></div>
+</div>
+<p class="muted map-note">Base map © OpenStreetMap contributors. Phase 2 educational overlays are simplified learning geometries derived from verified Georgia EPD/GDOT geographic references; the architecture is ready for full official GIS imports.</p>
+{% endblock %}
+{% block scripts %}<script>window.RICHMACK_GAME_MODE={{ 'true' if game_mode else 'false' }};</script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="{{url_for('static',filename='js/map.js')}}"></script>{% endblock %}

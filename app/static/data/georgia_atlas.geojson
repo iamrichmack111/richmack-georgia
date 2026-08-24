@@ -1,0 +1,785 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Blue Ridge",
+        "layer": "regions",
+        "kind": "physiographic region",
+        "summary": "Mountainous northeast Georgia with high elevations and major headwater areas.",
+        "why": "Elevation and terrain influence rainfall, streams, recreation, road routes, and settlement.",
+        "challenge": "Blue Ridge"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -84.65,
+              34.55
+            ],
+            [
+              -83.95,
+              34.42
+            ],
+            [
+              -83.05,
+              34.75
+            ],
+            [
+              -83.35,
+              35.0
+            ],
+            [
+              -84.55,
+              35.0
+            ],
+            [
+              -84.65,
+              34.55
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Ridge and Valley",
+        "layer": "regions",
+        "kind": "physiographic region",
+        "summary": "Long ridges and valleys across northwest Georgia.",
+        "why": "Parallel landforms shape transportation corridors, farming areas, and community locations.",
+        "challenge": "Ridge and Valley"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -85.6,
+              34.55
+            ],
+            [
+              -84.65,
+              34.55
+            ],
+            [
+              -84.55,
+              35.0
+            ],
+            [
+              -85.35,
+              35.0
+            ],
+            [
+              -85.6,
+              34.55
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Appalachian Plateau",
+        "layer": "regions",
+        "kind": "physiographic region",
+        "summary": "Georgia\u2019s smallest physiographic region in the far northwest.",
+        "why": "Plateau terrain connects Georgia to the broader Appalachian landscape and helps explain regional geology.",
+        "challenge": "Appalachian Plateau"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -85.62,
+              34.75
+            ],
+            [
+              -85.35,
+              34.78
+            ],
+            [
+              -85.32,
+              35.0
+            ],
+            [
+              -85.62,
+              35.0
+            ],
+            [
+              -85.62,
+              34.75
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Piedmont",
+        "layer": "regions",
+        "kind": "physiographic region",
+        "summary": "Rolling uplands across central and north-central Georgia, including metro Atlanta.",
+        "why": "Population, roads, water demand, industry, and the Fall Line all connect strongly to Piedmont geography.",
+        "challenge": "Piedmont"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -85.2,
+              32.8
+            ],
+            [
+              -84.75,
+              34.55
+            ],
+            [
+              -83.95,
+              34.42
+            ],
+            [
+              -82.0,
+              33.6
+            ],
+            [
+              -82.4,
+              32.7
+            ],
+            [
+              -84.2,
+              32.6
+            ],
+            [
+              -85.2,
+              32.8
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Coastal Plain",
+        "layer": "regions",
+        "kind": "physiographic region",
+        "summary": "Broad lower-elevation region extending across southern Georgia to the Atlantic coast.",
+        "why": "Flatter terrain supports major agriculture, wetlands, long river reaches, highways, and coastal trade.",
+        "challenge": "Coastal Plain"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -85.2,
+              32.8
+            ],
+            [
+              -84.2,
+              32.6
+            ],
+            [
+              -82.4,
+              32.7
+            ],
+            [
+              -81.0,
+              33.0
+            ],
+            [
+              -80.85,
+              31.1
+            ],
+            [
+              -81.5,
+              30.4
+            ],
+            [
+              -84.9,
+              30.7
+            ],
+            [
+              -85.2,
+              32.8
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Brasstown Bald",
+        "layer": "mountains",
+        "kind": "mountain",
+        "summary": "Georgia\u2019s highest natural point.",
+        "why": "Mountain elevation influences drainage, ecosystems, recreation, and transportation routes.",
+        "challenge": "Brasstown Bald"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -83.81,
+          34.874
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Blood Mountain",
+        "layer": "mountains",
+        "kind": "mountain",
+        "summary": "A prominent Blue Ridge summit on the Appalachian Trail.",
+        "why": "Mountain elevation influences drainage, ecosystems, recreation, and transportation routes.",
+        "challenge": "Blood Mountain"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -83.937,
+          34.74
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Lookout Mountain",
+        "layer": "mountains",
+        "kind": "mountain",
+        "summary": "A plateau/ridge landmark overlooking northwest Georgia.",
+        "why": "Mountain elevation influences drainage, ecosystems, recreation, and transportation routes.",
+        "challenge": "Lookout Mountain"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -85.35,
+          34.97
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Chattahoochee River",
+        "layer": "water",
+        "kind": "river",
+        "summary": "Major river flowing from north Georgia past the Atlanta region and along the western state boundary.",
+        "why": "It connects headwaters, reservoirs, drinking-water supply, recreation, hydropower, cities, and downstream communities.",
+        "challenge": "Chattahoochee River"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -83.73,
+            34.82
+          ],
+          [
+            -84.08,
+            34.28
+          ],
+          [
+            -84.4,
+            33.88
+          ],
+          [
+            -84.6,
+            33.55
+          ],
+          [
+            -84.95,
+            32.46
+          ],
+          [
+            -85.02,
+            31.0
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Savannah River",
+        "layer": "water",
+        "kind": "river",
+        "summary": "Major eastern boundary river reaching the Atlantic at Savannah.",
+        "why": "The river connects water resources, interstate geography, ecosystems, industry, and maritime trade.",
+        "challenge": "Savannah River"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -82.73,
+            34.45
+          ],
+          [
+            -82.25,
+            33.75
+          ],
+          [
+            -81.95,
+            33.45
+          ],
+          [
+            -81.75,
+            32.75
+          ],
+          [
+            -81.12,
+            32.1
+          ],
+          [
+            -80.88,
+            32.03
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Flint River",
+        "layer": "water",
+        "kind": "river",
+        "summary": "River beginning near metro Atlanta and flowing south through western Georgia.",
+        "why": "Its basin links urban headwaters, agriculture, water supply, ecology, and downstream water management.",
+        "challenge": "Flint River"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -84.45,
+            33.55
+          ],
+          [
+            -84.55,
+            32.85
+          ],
+          [
+            -84.43,
+            32.35
+          ],
+          [
+            -84.15,
+            31.6
+          ],
+          [
+            -84.0,
+            30.8
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Ocmulgee River",
+        "layer": "water",
+        "kind": "river",
+        "summary": "Central Georgia river flowing through the Macon area toward the Altamaha system.",
+        "why": "It illustrates how central Georgia cities and watersheds connect toward the coast.",
+        "challenge": "Ocmulgee River"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -83.85,
+            33.35
+          ],
+          [
+            -83.65,
+            32.85
+          ],
+          [
+            -83.63,
+            32.84
+          ],
+          [
+            -83.15,
+            31.95
+          ],
+          [
+            -82.55,
+            31.65
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Lake Lanier",
+        "layer": "water",
+        "kind": "reservoir",
+        "summary": "Large reservoir on the upper Chattahoochee system.",
+        "why": "Reservoirs connect flood control, water supply, hydropower, recreation, ecosystems, and population growth.",
+        "challenge": "Lake Lanier"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -84.12,
+              34.35
+            ],
+            [
+              -83.95,
+              34.35
+            ],
+            [
+              -83.88,
+              34.2
+            ],
+            [
+              -84.02,
+              34.12
+            ],
+            [
+              -84.15,
+              34.22
+            ],
+            [
+              -84.12,
+              34.35
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "I-75 corridor",
+        "layer": "transport",
+        "kind": "interstate",
+        "summary": "Major north\u2013south interstate corridor through Macon and Atlanta.",
+        "why": "It connects freight, commuters, industries, cities, and interstate commerce.",
+        "challenge": "I-75 corridor"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -84.96,
+            30.75
+          ],
+          [
+            -83.65,
+            32.85
+          ],
+          [
+            -84.39,
+            33.75
+          ],
+          [
+            -84.8,
+            34.75
+          ],
+          [
+            -84.95,
+            34.99
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "I-85 corridor",
+        "layer": "transport",
+        "kind": "interstate",
+        "summary": "Major interstate from west Georgia through Atlanta toward the northeast.",
+        "why": "It is a major passenger and freight route and helps explain development patterns around interchanges.",
+        "challenge": "I-85 corridor"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -85.15,
+            32.9
+          ],
+          [
+            -84.39,
+            33.75
+          ],
+          [
+            -83.98,
+            34.0
+          ],
+          [
+            -83.55,
+            34.4
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "I-20 corridor",
+        "layer": "transport",
+        "kind": "interstate",
+        "summary": "East\u2013west interstate crossing Georgia through metro Atlanta and Augusta.",
+        "why": "East\u2013west connectivity links urban centers, warehouses, industries, and neighboring states.",
+        "challenge": "I-20 corridor"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -85.2,
+            33.65
+          ],
+          [
+            -84.39,
+            33.75
+          ],
+          [
+            -82.0,
+            33.45
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "I-16 corridor",
+        "layer": "transport",
+        "kind": "interstate",
+        "summary": "Interstate connecting Macon with Savannah.",
+        "why": "This corridor is especially important for inland movement of cargo associated with the Port of Savannah.",
+        "challenge": "I-16 corridor"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -83.65,
+            32.84
+          ],
+          [
+            -82.7,
+            32.45
+          ],
+          [
+            -81.1,
+            32.08
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Atlanta\u2013Savannah rail corridor",
+        "layer": "transport",
+        "kind": "rail",
+        "summary": "Simplified educational representation of a major inland freight connection.",
+        "why": "Rail moves high volumes of freight and complements highway and port infrastructure.",
+        "challenge": "Atlanta\u2013Savannah rail corridor"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -84.39,
+            33.75
+          ],
+          [
+            -83.65,
+            32.84
+          ],
+          [
+            -82.7,
+            32.35
+          ],
+          [
+            -81.1,
+            32.08
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Atlanta",
+        "layer": "cities",
+        "kind": "city",
+        "summary": "State capital and major transportation/economic center.",
+        "why": "Cities are nodes where population, transportation, water systems, government, and economic activity meet.",
+        "challenge": "Atlanta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -84.388,
+          33.749
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Savannah",
+        "layer": "cities",
+        "kind": "city",
+        "summary": "Historic coastal city and major port center.",
+        "why": "Cities are nodes where population, transportation, water systems, government, and economic activity meet.",
+        "challenge": "Savannah"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -81.091,
+          32.081
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Augusta",
+        "layer": "cities",
+        "kind": "city",
+        "summary": "Eastern Georgia city on the Savannah River.",
+        "why": "Cities are nodes where population, transportation, water systems, government, and economic activity meet.",
+        "challenge": "Augusta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -81.974,
+          33.474
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Macon",
+        "layer": "cities",
+        "kind": "city",
+        "summary": "Central Georgia city near the Ocmulgee River and major transport corridors.",
+        "why": "Cities are nodes where population, transportation, water systems, government, and economic activity meet.",
+        "challenge": "Macon"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -83.632,
+          32.841
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Columbus",
+        "layer": "cities",
+        "kind": "city",
+        "summary": "West Georgia city on the Chattahoochee River.",
+        "why": "Cities are nodes where population, transportation, water systems, government, and economic activity meet.",
+        "challenge": "Columbus"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -84.988,
+          32.461
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Port of Savannah",
+        "layer": "infra",
+        "kind": "port",
+        "summary": "Major maritime freight gateway on the Georgia coast.",
+        "why": "Ports connect Georgia businesses to national and international trade through ships, rail, roads, and warehouses.",
+        "challenge": "Port of Savannah"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -81.14,
+          32.1
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Hartsfield\u2013Jackson Atlanta International Airport",
+        "layer": "infra",
+        "kind": "airport",
+        "summary": "Major passenger and cargo airport south of downtown Atlanta.",
+        "why": "Air transportation links Georgia quickly to national and global networks.",
+        "challenge": "Hartsfield\u2013Jackson Atlanta International Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -84.428,
+          33.64
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Buford Dam",
+        "layer": "infra",
+        "kind": "dam",
+        "summary": "Dam at Lake Lanier on the Chattahoochee River system.",
+        "why": "Dams can combine water storage, hydropower, flood management, recreation, and downstream-flow effects.",
+        "challenge": "Buford Dam"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -84.075,
+          34.157
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Garden City Terminal study area",
+        "layer": "infra",
+        "kind": "logistics",
+        "summary": "Port-side logistics study point near Savannah.",
+        "why": "Terminals demonstrate how ships, cranes, containers, rail, trucks, warehouses, and highways operate as one system.",
+        "challenge": "Garden City Terminal study area"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -81.15,
+          32.13
+        ]
+      }
+    }
+  ]
+}

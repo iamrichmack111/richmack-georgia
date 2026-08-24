@@ -92,6 +92,16 @@ CREATE TABLE IF NOT EXISTS grade_events (
   question_count INTEGER NOT NULL,
   completed_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS game_attempts (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  game_key TEXT NOT NULL,
+  score REAL NOT NULL,
+  correct_count INTEGER NOT NULL,
+  question_count INTEGER NOT NULL,
+  duration_seconds INTEGER NOT NULL DEFAULT 0,
+  completed_at TEXT NOT NULL
+);
 '''
 
 SOURCES = [
@@ -99,6 +109,8 @@ SOURCES = [
 ('Watershed Protection Branch', 'Georgia Environmental Protection Division', 'https://epd.georgia.gov/about-us/watershed-protection-branch', 'water', '2026-08-24', 90),
 ('Water Supply Watersheds', 'Georgia Environmental Protection Division', 'https://epd.georgia.gov/water-supply-watersheds', 'gis', '2026-08-24', 90),
 ('Road & Traffic Data', 'Georgia Department of Transportation', 'https://www.dot.ga.gov/GDOT/Pages/RoadTrafficData.aspx', 'transportation', '2026-08-24', 90),
+('Georgia Highway & Transportation Maps', 'Georgia Department of Transportation', 'https://www.dot.ga.gov/GDOT/Pages/Maps.aspx', 'transportation', '2026-08-24', 90),
+('Georgia Geologic Survey Maps', 'Georgia Environmental Protection Division', 'https://epd.georgia.gov/outreach/publications/georgia-geologic-survey-maps', 'geology', '2026-08-24', 365),
 ('QuickFacts: Georgia', 'U.S. Census Bureau', 'https://www.census.gov/quickfacts/fact/table/GA/PST045223', 'economics', '2026-08-24', 90),
 ]
 COURSES = [

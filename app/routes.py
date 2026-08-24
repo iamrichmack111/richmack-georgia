@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import Blueprint, Response, abort, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, Response, abort, flash, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 from .db import get_db, csv_for_grades, utcnow
 
@@ -62,7 +62,8 @@ def dashboard():
         SUM(CASE WHEN completed=1 THEN 1 ELSE 0 END) completed_count,
         COALESCE(AVG(CASE WHEN attempts>0 THEN mastery END),0) avg_mastery
         FROM progress WHERE user_id=?''',(uid,)).fetchone()
-    return render_template('dashboard.html', lessons=lessons, summary=summary)
+    game_stats = db.execute('''SELECT COUNT(*) attempts, COALESCE(MAX(score),0) best_score FROM game_attempts WHERE user_id=?''',(uid,)).fetchone()
+    return render_template('dashboard.html', lessons=lessons, summary=summary, game_stats=game_stats)
 
 
 @bp.route('/lesson/<slug>', methods=['GET','POST'])
@@ -101,7 +102,26 @@ def lesson(slug):
 
 @bp.route('/map')
 def map_view():
-    return render_template('map.html')
+    game_mode = request.args.get('game') == 'map-hunt'
+    return render_template('map.html', game_mode=game_mode)
+
+
+@bp.route('/api/games/map-hunt/score', methods=['POST'])
+@login_required()
+def save_map_hunt_score():
+    if session.get('role') != 'student':
+        return jsonify({'ok': False, 'error': 'student account required'}), 403
+    payload = request.get_json(silent=True) or {}
+    correct = max(0, int(payload.get('correct', 0)))
+    total = max(1, int(payload.get('total', 1)))
+    duration = max(0, int(payload.get('duration_seconds', 0)))
+    score = min(100.0, 100.0 * correct / total)
+    db = get_db()
+    db.execute('''INSERT INTO game_attempts(user_id,game_key,score,correct_count,question_count,duration_seconds,completed_at)
+                  VALUES (?,?,?,?,?,?,?)''',
+               (session['user_id'], 'map-hunt', score, correct, total, duration, utcnow()))
+    db.commit()
+    return jsonify({'ok': True, 'score': round(score, 1)})
 
 
 @bp.route('/games')
