@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% block content %}
+<article class="panel"><small>{{module.course_title}}</small><h1>{{module.title}}</h1><p class="lead">{{module.description}}</p><div class="essential"><strong>Essential question:</strong> {{module.essential_question}}</div><p>Mastery threshold: <strong>{{module.mastery_threshold|int}}%</strong>. Constructed responses require teacher/admin rubric review.</p></article>
+<div class="lesson-list">{% for l in lessons %}<a class="lesson-card" href="{{url_for('main.lesson',slug=l.slug)}}"><div><small>Lesson {{loop.index}} • Ages {{l.min_age}}–{{l.max_age}}</small><h3>{{l.title}}</h3><p>{{l.summary}}</p></div><div class="score">{{l.status or 'not started'}}<br>{{'%.0f'|format(l.final_score if l.final_score is not none else (l.best_auto_score or 0))}}%</div></a>{% endfor %}</div>
+{% endblock %}
