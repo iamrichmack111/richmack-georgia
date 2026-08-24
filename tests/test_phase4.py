@@ -13,7 +13,7 @@ def login(c,u,p):
 
 def test_health_phase4(tmp_path):
     app,c=app_client(tmp_path)
-    r=c.get('/health'); assert r.status_code==200; assert r.json['phase']=='4.0'
+    r=c.get('/health'); assert r.status_code==200; assert r.json['phase']=='4.1'
 
 
 def test_game_score_is_in_gradebook_and_csv(tmp_path):
@@ -49,3 +49,56 @@ def test_parent_invite_register_and_scope(tmp_path):
     p=app.test_client(); r=p.post(f'/invite/{token}',data={'display_name':'Parent One','username':'parent1','password':'ParentPass1','confirm_password':'ParentPass1'},follow_redirects=True)
     assert b'Login' in r.data or b'sign in' in r.data.lower()
     login(p,'parent1','ParentPass1'); r=p.get('/parent'); assert b'Age 14 Test Student' in r.data
+
+
+
+def test_unscoped_parent_invite_has_zero_student_access(tmp_path):
+    app,a=app_client(tmp_path); login(a,'admin','change-me-local')
+    a.post('/admin/invites',data={},follow_redirects=True)
+    with app.app_context():
+        from app.db import get_db
+        token=get_db().execute('SELECT token FROM parent_invites ORDER BY id DESC LIMIT 1').fetchone()['token']
+    p=app.test_client()
+    p.post(f'/invite/{token}',data={'display_name':'Empty Parent','username':'emptyparent','password':'ParentPass1','confirm_password':'ParentPass1'},follow_redirects=True)
+    login(p,'emptyparent','ParentPass1')
+    page=p.get('/parent')
+    assert b'No linked students yet' in page.data
+    assert b'Age 14 Test Student' not in page.data
+    assert b'Demo Student' not in page.data
+
+
+def test_parent_can_create_child_but_not_see_other_students(tmp_path):
+    app,a=app_client(tmp_path); login(a,'admin','change-me-local')
+    a.post('/admin/invites',data={},follow_redirects=True)
+    with app.app_context():
+        from app.db import get_db
+        token=get_db().execute('SELECT token FROM parent_invites ORDER BY id DESC LIMIT 1').fetchone()['token']
+    p=app.test_client()
+    p.post(f'/invite/{token}',data={'display_name':'Family Parent','username':'familyparent','password':'ParentPass1','confirm_password':'ParentPass1'},follow_redirects=True)
+    login(p,'familyparent','ParentPass1')
+    p.post('/parent/students/create',data={'display_name':'My Child','username':'mychild','age':13,'password':'TempPass123','confirm_password':'TempPass123'},follow_redirects=True)
+    page=p.get('/parent')
+    assert b'My Child' in page.data
+    assert b'Age 14 Test Student' not in page.data
+    assert b'Demo Student' not in page.data
+
+
+def test_family_link_code_links_only_bound_student(tmp_path):
+    app,a=app_client(tmp_path); login(a,'admin','change-me-local')
+    with app.app_context():
+        from app.db import get_db
+        sid=get_db().execute("SELECT id FROM users WHERE username='student14'").fetchone()['id']
+    a.post(f'/admin/students/{sid}/family-code',follow_redirects=True)
+    a.post('/admin/invites',data={},follow_redirects=True)
+    with app.app_context():
+        from app.db import get_db
+        db=get_db()
+        code=db.execute('SELECT code FROM student_claim_codes WHERE student_id=? AND used_at IS NULL ORDER BY id DESC LIMIT 1',(sid,)).fetchone()['code']
+        token=db.execute('SELECT token FROM parent_invites ORDER BY id DESC LIMIT 1').fetchone()['token']
+    p=app.test_client()
+    p.post(f'/invite/{token}',data={'display_name':'Claim Parent','username':'claimparent','password':'ParentPass1','confirm_password':'ParentPass1'},follow_redirects=True)
+    login(p,'claimparent','ParentPass1')
+    p.post('/parent/students/claim',data={'claim_code':code},follow_redirects=True)
+    page=p.get('/parent')
+    assert b'Age 14 Test Student' in page.data
+    assert b'Demo Student' not in page.data

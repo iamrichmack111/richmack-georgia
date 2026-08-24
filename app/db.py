@@ -152,6 +152,16 @@ CREATE TABLE IF NOT EXISTS parent_student_links (
   student_id INTEGER NOT NULL REFERENCES users(id),
   PRIMARY KEY(parent_id,student_id)
 );
+CREATE TABLE IF NOT EXISTS student_claim_codes (
+  id INTEGER PRIMARY KEY,
+  student_id INTEGER NOT NULL REFERENCES users(id),
+  code TEXT UNIQUE NOT NULL,
+  created_by INTEGER NOT NULL REFERENCES users(id),
+  expires_at TEXT,
+  used_at TEXT,
+  used_by_parent_id INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS usage_events (
   id INTEGER PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id),
@@ -288,8 +298,45 @@ ITEMS = {
 }
 
 
+def migrate_legacy_users(db):
+    """Upgrade Phase 3.x users while preserving IDs referenced by grades and games."""
+    row = db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").fetchone()
+    if not row:
+        return
+    sql = row['sql'] or ''
+    cols = {r['name'] for r in db.execute('PRAGMA table_info(users)').fetchall()}
+    required = {'active','allow_courses','allow_map','allow_games','must_change_password','last_login_at'}
+    if 'parent' in sql and required.issubset(cols):
+        return
+    db.commit()
+    db.execute('PRAGMA foreign_keys = OFF')
+    db.execute("""CREATE TABLE users_new (
+      id INTEGER PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('admin','student','parent')),
+      age INTEGER,
+      active INTEGER NOT NULL DEFAULT 1,
+      allow_courses INTEGER NOT NULL DEFAULT 1,
+      allow_map INTEGER NOT NULL DEFAULT 1,
+      allow_games INTEGER NOT NULL DEFAULT 1,
+      must_change_password INTEGER NOT NULL DEFAULT 0,
+      last_login_at TEXT
+    )""")
+    db.execute("""INSERT INTO users_new(
+      id,username,password_hash,display_name,role,age,
+      active,allow_courses,allow_map,allow_games,must_change_password,last_login_at
+    ) SELECT id,username,password_hash,display_name,role,age,1,1,1,1,0,NULL FROM users""")
+    db.execute('DROP TABLE users')
+    db.execute('ALTER TABLE users_new RENAME TO users')
+    db.commit()
+    db.execute('PRAGMA foreign_keys = ON')
+
+
 def init_db():
     db = get_db()
+    migrate_legacy_users(db)
     db.executescript(SCHEMA)
     admin_user = os.getenv('ADMIN_USERNAME', 'admin')
     admin_pw = os.getenv('ADMIN_PASSWORD', 'change-me-local')

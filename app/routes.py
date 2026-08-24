@@ -63,7 +63,7 @@ def record_usage(event_type, endpoint=None, duration=0, detail=None, user_id=Non
 
 @bp.route('/health')
 def health():
-    return {'status': 'ok', 'app': 'richmack-georgia', 'phase': '4.0'}, 200
+    return {'status': 'ok', 'app': 'richmack-georgia', 'phase': '4.1'}, 200
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -326,6 +326,57 @@ def parent_portal():
     return render_template('parent.html', students=students)
 
 
+@bp.route('/parent/students/create', methods=['POST'])
+@login_required(role='parent')
+def parent_create_student():
+    db = get_db()
+    display = request.form.get('display_name', '').strip()
+    username = request.form.get('username', '').strip()
+    age = request.form.get('age', type=int)
+    pw = request.form.get('password', '')
+    confirm = request.form.get('confirm_password', '')
+    if not display or len(username) < 3:
+        flash('Enter a student name and username of at least 3 characters.')
+    elif age is None or age < 9 or age > 14:
+        flash('Student age must be between 9 and 14 for this curriculum.')
+    elif len(pw) < 8 or pw != confirm:
+        flash('Student passwords must match and be at least 8 characters.')
+    elif db.execute('SELECT 1 FROM users WHERE username=?', (username,)).fetchone():
+        flash('That username is already in use.')
+    else:
+        cur = db.execute('''INSERT INTO users(username,password_hash,display_name,role,age,must_change_password)
+                            VALUES (?,?,?,?,?,1)''',
+                         (username, generate_password_hash(pw), display, 'student', age))
+        sid = cur.lastrowid
+        db.execute('INSERT INTO parent_student_links(parent_id,student_id) VALUES (?,?)',
+                   (session['user_id'], sid))
+        db.commit()
+        flash(f'{display} was created and linked only to your parent account. The student must change the temporary password at first login.')
+    return redirect(url_for('main.parent_portal'))
+
+
+@bp.route('/parent/students/claim', methods=['POST'])
+@login_required(role='parent')
+def parent_claim_student():
+    db = get_db()
+    code = request.form.get('claim_code', '').strip().upper().replace('-', '')
+    row = db.execute('''SELECT scc.*,u.display_name FROM student_claim_codes scc
+                        JOIN users u ON u.id=scc.student_id
+                        WHERE replace(upper(scc.code),'-','')=?''', (code,)).fetchone()
+    if not row or row['used_at']:
+        flash('That Family Link Code is invalid or has already been used.')
+    elif row['expires_at'] and datetime.fromisoformat(row['expires_at']) < datetime.now(timezone.utc):
+        flash('That Family Link Code has expired.')
+    else:
+        db.execute('INSERT OR IGNORE INTO parent_student_links(parent_id,student_id) VALUES (?,?)',
+                   (session['user_id'], row['student_id']))
+        db.execute('UPDATE student_claim_codes SET used_at=?,used_by_parent_id=? WHERE id=?',
+                   (utcnow(), session['user_id'], row['id']))
+        db.commit()
+        flash(f"{row['display_name']} is now linked to your family.")
+    return redirect(url_for('main.parent_portal'))
+
+
 @bp.route('/admin/invites', methods=['POST'])
 @login_required(role='admin')
 def create_parent_invite():
@@ -362,13 +413,35 @@ def accept_invite(token):
             parent_id = cur.lastrowid
             if inv['student_id']:
                 db.execute('INSERT OR IGNORE INTO parent_student_links(parent_id,student_id) VALUES (?,?)', (parent_id, inv['student_id']))
-            else:
-                db.execute("INSERT OR IGNORE INTO parent_student_links(parent_id,student_id) SELECT ?,id FROM users WHERE role='student'", (parent_id,))
+            # A parent invite with no student is intentionally unscoped. It grants zero student records.
+            # The parent can create a child or claim an existing student with a one-time Family Link Code.
             db.execute('UPDATE parent_invites SET used_at=? WHERE id=?', (utcnow(), inv['id']))
             db.commit(); flash('Parent account created. You can sign in now.')
             return redirect(url_for('main.login'))
     student = db.execute('SELECT display_name FROM users WHERE id=?', (inv['student_id'],)).fetchone() if inv['student_id'] else None
     return render_template('invite.html', invite=inv, student=student, invalid=False)
+
+
+@bp.route('/admin/students/<int:student_id>/family-code', methods=['POST'])
+@login_required(role='admin')
+def create_family_link_code(student_id):
+    db = get_db()
+    student = db.execute("SELECT * FROM users WHERE id=? AND role='student'", (student_id,)).fetchone()
+    if not student:
+        abort(404)
+    # Invalidate older unused codes for this student so there is only one current claim secret.
+    db.execute('UPDATE student_claim_codes SET used_at=? WHERE student_id=? AND used_at IS NULL',
+               (utcnow(), student_id))
+    raw = secrets.token_hex(4).upper()
+    code = raw[:4] + '-' + raw[4:]
+    now = datetime.now(timezone.utc); expires = now + timedelta(days=7)
+    db.execute('''INSERT INTO student_claim_codes(student_id,code,created_by,expires_at,created_at)
+                  VALUES (?,?,?,?,?)''',
+               (student_id, code, session['user_id'], expires.replace(microsecond=0).isoformat(),
+                now.replace(microsecond=0).isoformat()))
+    db.commit()
+    flash(f"Family Link Code for {student['display_name']}: {code} (expires in 7 days; one use)")
+    return redirect(url_for('main.manage_users'))
 
 
 @bp.route('/admin/users')
@@ -380,7 +453,10 @@ def manage_users():
     parent_links = {}
     for row in db.execute('SELECT parent_id,student_id FROM parent_student_links'):
         parent_links.setdefault(row['parent_id'], set()).add(row['student_id'])
-    return render_template('users.html', users=users, students=students, parent_links=parent_links)
+    claim_codes = {}
+    for row in db.execute('''SELECT * FROM student_claim_codes WHERE used_at IS NULL ORDER BY created_at DESC'''):
+        claim_codes.setdefault(row['student_id'], row)
+    return render_template('users.html', users=users, students=students, parent_links=parent_links, claim_codes=claim_codes)
 
 
 @bp.route('/admin/users/create', methods=['POST'])

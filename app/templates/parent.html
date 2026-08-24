@@ -1,1 +1,18 @@
-{% extends 'base.html' %}{% block content %}<span class="eyebrow">PARENT PORTAL</span><h1>Family Progress</h1><p class="lead">View linked student grades, games, improvement tips, and usage statistics.</p><div class="module-grid">{% for s in students %}<a class="module-card" href="{{url_for('main.student_report',student_id=s.id)}}"><small>Student · Age {{s.age}}</small><h3>{{s.display_name}}</h3><p>Open grades, game scores, learning statistics, and recommendations.</p></a>{% else %}<article><h3>No linked students</h3><p>Ask an administrator for a student-specific parent invitation.</p></article>{% endfor %}</div>{% endblock %}
+{% extends 'base.html' %}{% block content %}
+<span class="eyebrow">PARENT PORTAL</span><h1>Family Progress</h1>
+<p class="lead">Only students linked to this parent account are visible here. Other families' grades are not searchable or listed.</p>
+<div class="module-grid">{% for s in students %}<a class="module-card" href="{{url_for('main.student_report',student_id=s.id)}}"><small>Student · Age {{s.age}}</small><h3>{{s.display_name}}</h3><p>Open grades, game scores, learning statistics, and recommendations.</p></a>{% else %}<article><h3>No linked students yet</h3><p>Create a child account below or use a Family Link Code for an existing student.</p></article>{% endfor %}</div>
+
+<section class="panel"><h2>Add a New Child / Student</h2><p class="muted">This creates a new student account and links it only to your family. The child will be required to replace the temporary password at first login.</p>
+<form class="form-grid" method="post" action="{{url_for('main.parent_create_student')}}">
+<label>Student name<input name="display_name" required></label>
+<label>Age<input type="number" min="9" max="14" name="age" required></label>
+<label>Username<input name="username" minlength="3" required></label>
+<label>Temporary password<input type="password" name="password" minlength="8" required></label>
+<label>Confirm password<input type="password" name="confirm_password" minlength="8" required></label>
+<div><button class="btn">Create & Link Student</button></div>
+</form></section>
+
+<section class="panel"><h2>Link an Existing Student</h2><p class="muted">Ask the administrator for a one-time Family Link Code for that specific student. The code does not reveal or grant access to anyone else.</p>
+<form method="post" action="{{url_for('main.parent_claim_student')}}" class="password-row"><label>Family Link Code<input name="claim_code" placeholder="AB12-CD34" autocomplete="off" required></label><button class="btn">Link Student</button></form></section>
+{% endblock %}
