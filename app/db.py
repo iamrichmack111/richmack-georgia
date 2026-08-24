@@ -270,6 +270,8 @@ def init_db():
                (admin_user, generate_password_hash(admin_pw), 'Local Administrator', 'admin', None))
     db.execute('INSERT OR IGNORE INTO users(username,password_hash,display_name,role,age) VALUES (?,?,?,?,?)',
                (student_user, generate_password_hash(student_pw), 'Demo Student', 'student', 12))
+    db.execute('INSERT OR IGNORE INTO users(username,password_hash,display_name,role,age) VALUES (?,?,?,?,?)',
+               ('student14', generate_password_hash('student14'), 'Age 14 Test Student', 'student', 14))
     for row in SOURCES:
         db.execute('INSERT OR IGNORE INTO sources(name,agency,url,category,verified_on,refresh_days) VALUES (?,?,?,?,?,?)', row)
     for row in COURSES:

@@ -18,7 +18,7 @@ def login_required(role=None):
     return deco
 
 @bp.route('/health')
-def health(): return {'status':'ok','app':'richmack-georgia','phase':3},200
+def health(): return {'status':'ok','app':'richmack-georgia','phase':'3.1'},200
 
 @bp.route('/login',methods=['GET','POST'])
 def login():
@@ -39,6 +39,9 @@ def home(): return render_template('home.html')
 @bp.route('/dashboard')
 @login_required()
 def dashboard():
+    if session.get('role') == 'admin':
+        flash('Admin accounts are for review and reporting. Sign in with a student account to complete graded coursework.')
+        return redirect(url_for('main.admin'))
     db=get_db(); uid=session['user_id']
     modules=db.execute('''SELECT m.*,c.title course_title,
       COUNT(l.id) lesson_count,
@@ -79,6 +82,9 @@ def lesson(slug):
     items=db.execute('SELECT * FROM assessment_items WHERE lesson_id=? ORDER BY sort_order,id',(lesson['id'],)).fetchall()
     result=None
     if request.method=='POST':
+        if session.get('role') != 'student':
+            flash('Admin preview attempts are not graded. Sign in with a student account to submit coursework.')
+            return redirect(url_for('main.admin'))
         earned=0.0; possible=0.0; details=[]; constructed_count=0
         now=utcnow()
         for item in items:
@@ -143,8 +149,11 @@ def admin():
     pending=db.execute('''SELECT cs.*,u.display_name,l.title lesson,ai.prompt,ai.rubric FROM constructed_submissions cs
       JOIN users u ON u.id=cs.user_id JOIN lessons l ON l.id=cs.lesson_id JOIN assessment_items ai ON ai.id=cs.item_id
       WHERE cs.rubric_score IS NULL ORDER BY cs.submitted_at''').fetchall()
+    latest_grades=db.execute('''SELECT g.id,u.display_name,l.title lesson,g.auto_score,g.final_score,g.status,g.completed_at
+      FROM grade_events g JOIN users u ON u.id=g.user_id JOIN lessons l ON l.id=g.lesson_id
+      WHERE u.role='student' ORDER BY g.completed_at DESC,g.id DESC LIMIT 30''').fetchall()
     sources=db.execute('SELECT * FROM sources ORDER BY agency,name').fetchall()
-    return render_template('admin.html',students=students,pending=pending,sources=sources)
+    return render_template('admin.html',students=students,pending=pending,latest_grades=latest_grades,sources=sources)
 
 @bp.route('/admin/review/<int:submission_id>',methods=['POST'])
 @login_required('admin')

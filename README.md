@@ -1,6 +1,6 @@
-# Richmack Georgia — Phase 3 (v0.3)
+# Richmack Georgia — Phase 3.1 (v0.3)
 
-Phase 3 turns the atlas prototype into a deeper Georgia Studies curriculum test for ages 9–14.
+Phase 3.1 turns the atlas prototype into a deeper Georgia Studies curriculum test for ages 9–14.
 
 ## What changed
 
@@ -51,7 +51,7 @@ pytest -q
 curl -s http://127.0.0.1:5075/health
 ```
 
-## Phase 3 test path
+## Phase 3.1 test path
 
 1. Log in as `student`.
 2. Open **Module 1 — Georgia Water Systems**.
@@ -65,3 +65,11 @@ curl -s http://127.0.0.1:5075/health
 ## Source policy
 
 Seed coursework is grounded in official sources in the built-in registry: Georgia EPD, GDOT, Georgia Ports Authority, Georgia Department of Education, and U.S. Census Bureau. Simplified numerical freight rates in practice problems are explicitly fictional and are used only to teach quantitative reasoning.
+
+
+## Phase 3.1 test fixes
+- Admin accounts can no longer accidentally create hidden coursework grades.
+- Student objective grades appear immediately in Admin > Latest Grades, even while written work is provisional.
+- Added a dedicated age-14 test account: `student14` / `student14`.
+- Map Hunt now draws from 32 challenge prompts and avoids prompts used in the immediately previous game session when possible.
+- Airports and ports use large permanent symbols/labels instead of small generic dots.
