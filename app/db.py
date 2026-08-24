@@ -29,8 +29,14 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   display_name TEXT NOT NULL,
-  role TEXT NOT NULL CHECK(role IN ('admin','student')),
-  age INTEGER
+  role TEXT NOT NULL CHECK(role IN ('admin','student','parent')),
+  age INTEGER,
+  active INTEGER NOT NULL DEFAULT 1,
+  allow_courses INTEGER NOT NULL DEFAULT 1,
+  allow_map INTEGER NOT NULL DEFAULT 1,
+  allow_games INTEGER NOT NULL DEFAULT 1,
+  must_change_password INTEGER NOT NULL DEFAULT 0,
+  last_login_at TEXT
 );
 CREATE TABLE IF NOT EXISTS sources (
   id INTEGER PRIMARY KEY,
@@ -131,6 +137,29 @@ CREATE TABLE IF NOT EXISTS game_attempts (
   question_count INTEGER NOT NULL,
   duration_seconds INTEGER NOT NULL DEFAULT 0,
   completed_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS parent_invites (
+  id INTEGER PRIMARY KEY,
+  token TEXT UNIQUE NOT NULL,
+  created_by INTEGER NOT NULL REFERENCES users(id),
+  student_id INTEGER REFERENCES users(id),
+  expires_at TEXT,
+  used_at TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS parent_student_links (
+  parent_id INTEGER NOT NULL REFERENCES users(id),
+  student_id INTEGER NOT NULL REFERENCES users(id),
+  PRIMARY KEY(parent_id,student_id)
+);
+CREATE TABLE IF NOT EXISTS usage_events (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  event_type TEXT NOT NULL,
+  endpoint TEXT,
+  duration_seconds INTEGER NOT NULL DEFAULT 0,
+  detail TEXT,
+  created_at TEXT NOT NULL
 );
 '''
 
@@ -303,22 +332,41 @@ def init_db():
     current_app.teardown_appcontext(close_db)
 
 
-def csv_for_grades(user_id=None):
+def gradebook_rows(user_id=None, limit=None):
     db = get_db()
-    sql = '''SELECT u.display_name student,u.age,c.title course,m.title module,l.title lesson,
-                    g.auto_score,g.final_score,g.status,g.completed_at
-             FROM grade_events g JOIN users u ON u.id=g.user_id
-             JOIN lessons l ON l.id=g.lesson_id JOIN modules m ON m.id=l.module_id
-             JOIN courses c ON c.id=m.course_id'''
     params=[]
+    where_l = " WHERE u.role='student'"
+    where_g = " WHERE u.role='student'"
     if user_id:
-        sql += ' WHERE u.id=?'; params.append(user_id)
-    sql += ' ORDER BY g.completed_at DESC'
+        where_l += ' AND u.id=?'; where_g += ' AND u.id=?'; params=[user_id,user_id]
+    sql = f"""
+      SELECT 'coursework' record_type, g.id source_id, u.id user_id, u.display_name student, u.age,
+             c.title course, m.title module, l.title activity, g.auto_score score, g.final_score final_score,
+             g.status status, 0 duration_seconds, g.completed_at completed_at
+      FROM grade_events g JOIN users u ON u.id=g.user_id
+      JOIN lessons l ON l.id=g.lesson_id JOIN modules m ON m.id=l.module_id JOIN courses c ON c.id=m.course_id
+      {where_l}
+      UNION ALL
+      SELECT 'game' record_type, ga.id source_id, u.id user_id, u.display_name student, u.age,
+             'Games' course, 'Map Skills' module,
+             CASE ga.game_key WHEN 'map-hunt' THEN 'Map Hunt' ELSE ga.game_key END activity,
+             ga.score score, ga.score final_score,
+             CASE WHEN ga.score>=85 THEN 'mastered' ELSE 'practice' END status, ga.duration_seconds, ga.completed_at
+      FROM game_attempts ga JOIN users u ON u.id=ga.user_id
+      {where_g}
+      ORDER BY completed_at DESC
+    """
     rows=db.execute(sql,params).fetchall()
+    return rows[:limit] if limit else rows
+
+
+def csv_for_grades(user_id=None):
+    rows=gradebook_rows(user_id)
     out=io.StringIO(); w=csv.writer(out)
-    w.writerow(['student','age','course','module','lesson','auto_score_percent','final_score_percent','status','completed_at'])
+    w.writerow(['student','age','record_type','course','module','activity','score_percent','final_score_percent','status','duration_seconds','completed_at'])
     for r in rows:
-        w.writerow([r['student'],r['age'],r['course'],r['module'],r['lesson'],f"{r['auto_score']:.1f}",'' if r['final_score'] is None else f"{r['final_score']:.1f}",r['status'],r['completed_at']])
+        w.writerow([r['student'],r['age'],r['record_type'],r['course'],r['module'],r['activity'],f"{r['score']:.1f}",
+                    '' if r['final_score'] is None else f"{r['final_score']:.1f}",r['status'],r['duration_seconds'],r['completed_at']])
     return out.getvalue()
 
 
