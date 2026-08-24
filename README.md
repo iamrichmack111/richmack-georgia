@@ -1,25 +1,30 @@
-# Richmack Georgia — Phase 4.1 (v0.4)
+# Richmack Georgia — Phase 5 (v0.5)
 
-Phase 4 adds family administration, unified grades, usage analytics, improvement recommendations, and account controls to the Phase 3.1 Georgia Studies curriculum platform.
+Phase 5 expands the working Phase 4.1 family-safe Georgia Studies platform into a deeper long-term learning system for ages 9–14.
 
-## Phase 4 additions
+## What Phase 5 adds
 
-- **Game grades in the gradebook:** Map Hunt attempts now appear beside coursework in Admin → Latest Gradebook Activity and in CSV exports.
-- **Student analytics:** coursework average, lessons mastered, game average/best score, active days, recorded learning time, recent activity, and improvement recommendations.
-- **Parent accounts:** admins can generate seven-day one-use parent invitation links.
-- **Scoped parent access:** an invite can be linked to one student or all current students. After registration, Admin → Users can change exactly which students each parent may view.
-- **Parent portal:** parents see only linked students and can open their grades, games, usage, tips, and CSV export.
-- **User management:** create student, parent, or admin accounts; disable/enable accounts; restrict student coursework, map, and games separately.
-- **Password controls:** every user can change their own password. Admins can reset any user's password to a temporary password and force a change on next login.
-- **Bulk password reset:** resets every active account except the currently logged-in administrator and downloads a one-time CSV containing the generated temporary passwords.
-- Existing Phase 3 curriculum, 85% mastery, constructed-response review, Phase 2 atlas, and Map Hunt remain included.
+- **Skill-level analytics** across physical regions, mountains, rivers, watersheds, reservoirs, water quality, transportation, economics, industry, quantitative reasoning, historical causation, source analysis, and critical thinking.
+- **Map Hunt skill evidence**: game attempts can now record which skill areas were right or wrong rather than only the overall score.
+- **Four new deep modules / 12 lessons**:
+  - Module 3 — Physical Geography & Mountains
+  - Module 4 — Rivers, Lakes & Watersheds
+  - Module 5 — Georgia History: Place, Change & Evidence
+  - Module 6 — Georgia Economics & Business
+- **Age-aware coursework**: students see lessons appropriate to their configured age within the 9–14 curriculum range.
+- **Assignments**: admins and linked parents can assign either a whole module or one lesson, set a minimum score, and optionally set a due date.
+- **Academic years**: grades and new game attempts are attached to an academic year. The default local year is `2026–2027`; admins can create future years and activate one without deleting old records.
+- **Academic-year gradebook**: view old/current year records separately while keeping the existing all-history CSV export.
+- **Student assignment dashboard**: students see assigned work, target mastery, due dates, progress, and completion/overdue state.
+- **Parent/admin reports**: student reports now include skill-by-skill mastery, assignments, existing usage statistics, grades, games, and improvement recommendations.
+- Existing deny-by-default parent privacy, Family Link Codes, password reset tools, user restrictions, verified source registry, Leaflet/OSM atlas, and 85% mastery model remain intact.
 
 ## Local install
 
 ```bash
 cd ~/Downloads
-unzip richmack-georgia-v0.4.zip
-cd richmack-georgia-v0.4
+unzip richmack-georgia-v0.5.zip
+cd richmack-georgia-v0.5
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -36,86 +41,34 @@ python run.py
 
 Open `http://127.0.0.1:5075`.
 
-### Default test accounts
+### Default local test accounts
 
 - Admin: `admin` / `change-me-local`
-- Student age 12: `student` / `student`
-- Student age 14: `student14` / `student14`
+- Age 12 student: `student` / `student`
+- Age 14 student: `student14` / `student14`
 
-## Test the missing 90% game grade fix
+## Recommended Phase 5 test
 
-1. Sign in as `student14`.
-2. Play Map Hunt and submit a score.
-3. Log out and sign in as `admin`.
-4. Open **Admin**.
-5. Under **Latest Gradebook Activity**, the Map Hunt result should appear as `Game` with its score.
-6. The student's row also shows game average and number of game attempts.
-7. Open the student's **Analytics** report for improvement tips and usage statistics.
-8. Export All Grades CSV; the game attempt appears with `record_type=game`.
+1. Log in as admin.
+2. Open **Admin** and assign **Module 3 — Physical Geography & Mountains** to `Age 14 Test Student`, target 85%.
+3. Log in as `student14` and confirm **My Assignments** appears on the dashboard.
+4. Complete lesson 3.2 or 6.2 to test a numeric problem plus constructed response.
+5. Play Map Hunt once to generate map-skill evidence.
+6. Return as admin and open the student's **Analytics** page. Confirm the skill bars show evidence counts and scores.
+7. Open **Gradebook** and confirm the records appear under academic year `2026–2027`.
+8. Create a future academic year in Admin, activate it, take another test, and confirm the new event appears under that year while the older record remains in 2026–2027.
 
-## Parent invitation test on the same Mac
+## Parent assignment test
 
-1. Sign in as admin.
-2. Open **Admin → Parent Invite Link**.
-3. Choose the student the parent is allowed to view, then click **Create Invite Link**.
-4. Copy the generated link and open it in a private/incognito browser window.
-5. Register the parent account.
-6. The parent is sent to the Parent Portal after login and can view only linked students.
+A parent can assign only a student already linked to that parent account. Parent access remains deny-by-default; assignment controls do not provide a student directory or expand grade visibility.
 
-## Parent invitation test from another device on the same Wi-Fi
+## Academic-year behavior
 
-A `127.0.0.1` invite points back to the device opening the link, so it cannot be used by another computer or phone. For LAN testing, run the server on all interfaces:
+The active year controls where **new** grade/game records and assignments are stored. Changing the active year does not rewrite historical records.
 
-```bash
-cd ~/Downloads/richmack-georgia-v0.4
-source .venv/bin/activate
+## Verified-source architecture
 
-export HOST=0.0.0.0
-python run.py
-```
-
-Find your Mac's local IP:
-
-```bash
-ipconfig getifaddr en0
-```
-
-If Wi-Fi is not `en0`, try:
-
-```bash
-ipconfig getifaddr en1
-```
-
-Suppose it returns `192.168.1.50`. On the Mac and the other device, open:
-
-```text
-http://192.168.1.50:5075
-```
-
-Create the parent invite while you are using that LAN address. The generated invite will then use the same reachable host. The other device must be on the same local network, and macOS may ask whether Python may accept incoming connections.
-
-When deployed to the cloud, invite links will use the application's normal public HTTPS hostname instead.
-
-## Restricting users
-
-Admin → **Users** allows you to:
-
-- Disable an account completely.
-- Allow/deny a student access to coursework.
-- Allow/deny a student access to the map.
-- Allow/deny a student access to games.
-- Change which students a parent can view.
-- Reset an individual password.
-- Create new users.
-- Bulk-reset active user passwords.
-
-## Password behavior
-
-A user can change their own password from **Password** in the navigation.
-
-When an administrator resets a password, that password is temporary. The next successful login forces the account through **Change Password** before continuing.
-
-For a bulk reset, save the downloaded CSV immediately. The application stores password hashes, not readable copies of the generated temporary passwords.
+The source registry includes official/authoritative material from Georgia Department of Education, Georgia Environmental Protection Division / Georgia Geologic Survey, Georgia Department of Transportation, Georgia Ports Authority, Georgia Archives, U.S. Census Bureau, and Georgia Department of Economic Development. Fictional numerical scenarios are labeled and are used to teach reasoning rather than presented as current operating data.
 
 ## Verification
 
@@ -125,17 +78,19 @@ pytest -q
 curl -s http://127.0.0.1:5075/health
 ```
 
-Expected health response includes:
+Expected health response:
 
 ```json
-{"app":"richmack-georgia","phase":"4.0","status":"ok"}
+{"app":"richmack-georgia","phase":"5.0","status":"ok"}
 ```
 
-## Source policy
+## LAN testing
 
-Course material continues to use the built-in verified source registry containing official Georgia Department of Education, Georgia EPD, GDOT, Georgia Ports Authority, and U.S. Census sources. Simplified numerical scenarios used for teaching are identified as instructional scenarios rather than real operational rates.
+For testing parent/student accounts from another device on the same Wi-Fi:
 
+```bash
+export HOST=0.0.0.0
+python run.py
+```
 
-## Phase 4.1 family privacy
-
-Parent visibility is deny-by-default. A parent sees only rows in `parent_student_links` for that account. Parent invitations no longer have an "all students" behavior. An unscoped invitation creates a parent with zero student access. Parents may create a new age 9–14 student from the Parent Portal, which automatically links only that child to the creator. Existing students can be linked with a one-use seven-day Family Link Code generated by an administrator for that exact student.
+Then find the Mac's LAN IP with `ipconfig getifaddr en0` (or `en1`) and open `http://<LAN-IP>:5075` from the other device.

@@ -13,7 +13,7 @@ def login(c,u,p):
 
 def test_health_phase4(tmp_path):
     app,c=app_client(tmp_path)
-    r=c.get('/health'); assert r.status_code==200; assert r.json['phase']=='4.1'
+    r=c.get('/health'); assert r.status_code==200; assert r.json['phase']=='5.0'
 
 
 def test_game_score_is_in_gradebook_and_csv(tmp_path):

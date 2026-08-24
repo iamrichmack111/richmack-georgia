@@ -1,6 +1,7 @@
 import os
 from flask import Flask
 from .db import init_db
+from .phase5 import init_phase5
 
 
 def create_app(test_config=None):
@@ -17,5 +18,6 @@ def create_app(test_config=None):
 
     with app.app_context():
         init_db()
+        init_phase5()
 
     return app

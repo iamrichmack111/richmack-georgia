@@ -7,6 +7,7 @@ from flask import Blueprint, Response, abort, flash, jsonify, redirect, render_t
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .db import get_db, csv_for_grades, gradebook_rows, utcnow
+from .phase5 import current_academic_year_id, skill_stats, assignment_rows
 
 bp = Blueprint('main', __name__)
 MASTER = 85.0
@@ -63,7 +64,7 @@ def record_usage(event_type, endpoint=None, duration=0, detail=None, user_id=Non
 
 @bp.route('/health')
 def health():
-    return {'status': 'ok', 'app': 'richmack-georgia', 'phase': '4.1'}, 200
+    return {'status': 'ok', 'app': 'richmack-georgia', 'phase': '5.0'}, 200
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -134,10 +135,11 @@ def dashboard():
       SUM(CASE WHEN p.status='mastered' THEN 1 ELSE 0 END) mastered_count
       FROM modules m JOIN courses c ON c.id=m.course_id JOIN lessons l ON l.module_id=m.id
       LEFT JOIN progress p ON p.lesson_id=l.id AND p.user_id=?
-      GROUP BY m.id ORDER BY c.sort_order,m.sort_order''', (uid,)).fetchall()
+      WHERE ? BETWEEN l.min_age AND l.max_age
+      GROUP BY m.id ORDER BY c.sort_order,m.sort_order''', (uid,u['age'])).fetchall()
     lessons = db.execute('''SELECT l.*,m.title module_title,c.title course_title,p.best_auto_score,p.final_score,p.status
       FROM lessons l JOIN modules m ON m.id=l.module_id JOIN courses c ON c.id=m.course_id
-      LEFT JOIN progress p ON p.lesson_id=l.id AND p.user_id=? ORDER BY c.sort_order,m.sort_order,l.sort_order''', (uid,)).fetchall()
+      LEFT JOIN progress p ON p.lesson_id=l.id AND p.user_id=? WHERE ? BETWEEN l.min_age AND l.max_age ORDER BY c.sort_order,m.sort_order,l.sort_order''', (uid,u['age'])).fetchall()
     summary = db.execute('''SELECT COUNT(*) attempted,
       SUM(CASE WHEN status='mastered' THEN 1 ELSE 0 END) mastered,
       SUM(CASE WHEN status='provisional' THEN 1 ELSE 0 END) provisional,
@@ -146,9 +148,11 @@ def dashboard():
     game_stats = db.execute('''SELECT COUNT(*) attempts,COALESCE(MAX(score),0) best_score,COALESCE(AVG(score),0) avg_score,
                                COALESCE(SUM(duration_seconds),0) seconds FROM game_attempts WHERE user_id=?''', (uid,)).fetchone()
     tips = build_tips(uid)
+    assignments = assignment_rows(uid)
+    skills = [x for x in skill_stats(uid) if x['evidence_count'] > 0]
     record_usage('view', 'dashboard')
     return render_template('dashboard.html', modules=modules, lessons=lessons, summary=summary, game_stats=game_stats,
-                           tips=tips, user=u)
+                           tips=tips, assignments=assignments, skills=skills, user=u)
 
 
 @bp.route('/module/<slug>')
@@ -157,8 +161,9 @@ def module_view(slug):
     db = get_db(); uid = session['user_id']
     module = db.execute('''SELECT m.*,c.title course_title FROM modules m JOIN courses c ON c.id=m.course_id WHERE m.slug=?''', (slug,)).fetchone()
     if not module: abort(404)
+    age=current_user()['age']
     lessons = db.execute('''SELECT l.*,p.best_auto_score,p.final_score,p.status FROM lessons l
-       LEFT JOIN progress p ON p.lesson_id=l.id AND p.user_id=? WHERE l.module_id=? ORDER BY l.sort_order''', (uid, module['id'])).fetchall()
+       LEFT JOIN progress p ON p.lesson_id=l.id AND p.user_id=? WHERE l.module_id=? AND ? BETWEEN l.min_age AND l.max_age ORDER BY l.sort_order''', (uid, module['id'],age)).fetchall()
     record_usage('view', 'module', detail=slug)
     return render_template('module.html', module=module, lessons=lessons)
 
@@ -210,8 +215,9 @@ def lesson(slug):
           best_auto_score=excluded.best_auto_score,final_score=COALESCE(progress.final_score,excluded.final_score),attempts=excluded.attempts,
           status=CASE WHEN progress.status='mastered' THEN 'mastered' ELSE excluded.status END,last_completed_at=excluded.last_completed_at''',
           (uid, lesson['id'], best, final, attempts, status, now))
-        db.execute('INSERT INTO grade_events(user_id,lesson_id,auto_score,final_score,status,completed_at) VALUES (?,?,?,?,?,?)',
-                   (uid, lesson['id'], auto, final, status, now))
+        year_id = current_academic_year_id(db)
+        db.execute('INSERT INTO grade_events(user_id,lesson_id,auto_score,final_score,status,completed_at,academic_year_id) VALUES (?,?,?,?,?,?,?)',
+                   (uid, lesson['id'], auto, final, status, now, year_id))
         duration = max(0, int(time.time()) - int(session.pop(timer_key, int(time.time()))))
         db.execute('INSERT INTO usage_events(user_id,event_type,endpoint,duration_seconds,detail,created_at) VALUES (?,?,?,?,?,?)',
                    (uid, 'lesson_submit', 'lesson', duration, slug, now))
@@ -243,8 +249,19 @@ def save_map_hunt_score():
     p = request.get_json(silent=True) or {}
     correct = max(0, int(p.get('correct', 0))); total = max(1, int(p.get('total', 1))); duration = max(0, int(p.get('duration_seconds', 0)))
     score = min(100.0, 100.0 * correct / total); db = get_db(); now = utcnow()
-    db.execute('INSERT INTO game_attempts(user_id,game_key,score,correct_count,question_count,duration_seconds,completed_at) VALUES (?,?,?,?,?,?,?)',
-               (session['user_id'], 'map-hunt', score, correct, total, duration, now))
+    year_id = current_academic_year_id(db)
+    cur = db.execute('INSERT INTO game_attempts(user_id,game_key,score,correct_count,question_count,duration_seconds,completed_at,academic_year_id) VALUES (?,?,?,?,?,?,?,?)',
+               (session['user_id'], 'map-hunt', score, correct, total, duration, now, year_id))
+    game_attempt_id = cur.lastrowid
+    breakdown = p.get('skill_breakdown') or {}
+    for skill_key, values in breakdown.items():
+        try:
+            c = max(0, int(values.get('correct', 0))); q = max(0, int(values.get('total', 0)))
+        except (AttributeError, TypeError, ValueError):
+            continue
+        if q:
+            db.execute('INSERT INTO game_skill_attempts(game_attempt_id,user_id,skill_key,correct_count,question_count,score) VALUES (?,?,?,?,?,?)',
+                       (game_attempt_id, session['user_id'], skill_key, c, q, 100.0*c/q))
     db.execute('INSERT INTO usage_events(user_id,event_type,endpoint,duration_seconds,detail,created_at) VALUES (?,?,?,?,?,?)',
                (session['user_id'], 'game_submit', 'map-hunt', duration, f'{correct}/{total}', now))
     db.commit()
@@ -267,6 +284,11 @@ def build_tips(uid):
         tips.append(f"Map Hunt average is {gs['avg']:.0f}%. Focus on transportation and water layers separately before combining all layers.")
     elif gs['n'] and gs['best'] >= 90:
         tips.append('Map recognition is strong. Move into explanation questions: describe why the feature matters, what connects to it, and what would change if it failed.')
+    skill_rows = [x for x in skill_stats(uid) if x['evidence_count'] > 0]
+    if skill_rows:
+        weakest = sorted(skill_rows, key=lambda x: (x['score'], -x['evidence_count']))[0]
+        if weakest['score'] < MASTER:
+            tips.insert(0, f"Skill focus: {weakest['label']} is currently {weakest['score']:.0f}% across {weakest['evidence_count']} evidence item(s). Choose practice that targets this skill before repeating your strongest area.")
     if not tips:
         tips.append('Complete another lesson or Map Hunt round. Improvement tips become more specific as the system collects more attempts.')
     return tips[:4]
@@ -305,7 +327,15 @@ def admin():
     sources = db.execute('SELECT * FROM sources ORDER BY agency,name').fetchall()
     invites = db.execute('''SELECT pi.*,u.display_name student FROM parent_invites pi LEFT JOIN users u ON u.id=pi.student_id
                             ORDER BY pi.created_at DESC LIMIT 10''').fetchall()
-    return render_template('admin.html', students=students, pending=pending, latest_grades=latest_grades, sources=sources, invites=invites)
+    years = db.execute('SELECT * FROM academic_years ORDER BY starts_on DESC').fetchall()
+    modules = db.execute('SELECT m.id,m.title,c.title course FROM modules m JOIN courses c ON c.id=m.course_id ORDER BY c.sort_order,m.sort_order').fetchall()
+    lessons = db.execute('SELECT l.id,l.title,m.title module FROM lessons l JOIN modules m ON m.id=l.module_id JOIN courses c ON c.id=m.course_id ORDER BY c.sort_order,m.sort_order,l.sort_order').fetchall()
+    recent_assignments = db.execute('''SELECT a.*,u.display_name student,COALESCE(l.title,m.title) activity,ay.name academic_year
+       FROM assignments a JOIN users u ON u.id=a.student_id JOIN academic_years ay ON ay.id=a.academic_year_id
+       LEFT JOIN lessons l ON l.id=a.lesson_id LEFT JOIN modules m ON m.id=a.module_id
+       WHERE a.archived=0 ORDER BY a.id DESC LIMIT 20''').fetchall()
+    return render_template('admin.html', students=students, pending=pending, latest_grades=latest_grades, sources=sources, invites=invites,
+                           years=years, modules=modules, lessons=lessons, recent_assignments=recent_assignments)
 
 
 @bp.route('/admin/student/<int:student_id>')
@@ -313,8 +343,10 @@ def admin():
 def student_report(student_id):
     if not can_view_student(student_id): abort(403)
     student, grade_rows, lesson_stats, game_stats, usage, recent, tips = student_report_data(student_id)
+    skills = skill_stats(student_id)
+    assignments = assignment_rows(student_id)
     return render_template('student_report.html', student=student, grade_rows=grade_rows, lesson_stats=lesson_stats,
-                           game_stats=game_stats, usage=usage, recent=recent, tips=tips)
+                           game_stats=game_stats, usage=usage, recent=recent, tips=tips, skills=skills, assignments=assignments)
 
 
 @bp.route('/parent')
@@ -323,7 +355,9 @@ def parent_portal():
     db = get_db()
     students = db.execute('''SELECT u.* FROM users u JOIN parent_student_links psl ON psl.student_id=u.id
                              WHERE psl.parent_id=? ORDER BY u.display_name''', (session['user_id'],)).fetchall()
-    return render_template('parent.html', students=students)
+    modules = db.execute('SELECT m.id,m.title,c.title course FROM modules m JOIN courses c ON c.id=m.course_id ORDER BY c.sort_order,m.sort_order').fetchall()
+    lessons = db.execute('SELECT l.id,l.title,m.title module FROM lessons l JOIN modules m ON m.id=l.module_id JOIN courses c ON c.id=m.course_id ORDER BY c.sort_order,m.sort_order,l.sort_order').fetchall()
+    return render_template('parent.html', students=students, modules=modules, lessons=lessons)
 
 
 @bp.route('/parent/students/create', methods=['POST'])
@@ -562,8 +596,9 @@ def review_submission(submission_id):
         rubric_pct = 100.0 * sum(rubric_scores) / (4 * len(rubric_scores)); final = 0.70 * p['best_auto_score'] + 0.30 * rubric_pct
         status = 'mastered' if final >= MASTER else 'remediation'
         db.execute('UPDATE progress SET final_score=?,status=? WHERE user_id=? AND lesson_id=?', (final, status, sub['user_id'], sub['lesson_id']))
-        db.execute('INSERT INTO grade_events(user_id,lesson_id,auto_score,final_score,status,completed_at) VALUES (?,?,?,?,?,?)',
-                   (sub['user_id'], sub['lesson_id'], p['best_auto_score'], final, status, now))
+        year_id = current_academic_year_id(db)
+        db.execute('INSERT INTO grade_events(user_id,lesson_id,auto_score,final_score,status,completed_at,academic_year_id) VALUES (?,?,?,?,?,?,?)',
+                   (sub['user_id'], sub['lesson_id'], p['best_auto_score'], final, status, now, year_id))
     db.commit(); flash('Constructed response reviewed and lesson grade recalculated when all rubric items are complete.')
     return redirect(url_for('main.admin'))
 
@@ -576,3 +611,95 @@ def export_grades():
         if not student_id or not can_view_student(student_id): abort(403)
     return Response(csv_for_grades(student_id), mimetype='text/csv',
                     headers={'Content-Disposition': 'attachment; filename=richmack_georgia_gradebook.csv'})
+
+
+def gradebook_for_year(year_id, student_id=None, limit=200):
+    db=get_db(); params=[year_id]; student_clause=''
+    if student_id:
+        student_clause=' AND u.id=?'; params.append(student_id)
+    rows=db.execute(f'''SELECT 'coursework' record_type,u.display_name student,u.id student_id,c.title course,m.title module,
+       l.title activity,g.auto_score score,g.final_score,g.status,g.completed_at
+       FROM grade_events g JOIN users u ON u.id=g.user_id JOIN lessons l ON l.id=g.lesson_id
+       JOIN modules m ON m.id=l.module_id JOIN courses c ON c.id=m.course_id
+       WHERE u.role='student' AND g.academic_year_id=? {student_clause}
+       UNION ALL
+       SELECT 'game',u.display_name,u.id,'Games','Map Skills','Map Hunt',ga.score,ga.score,
+       CASE WHEN ga.score>=85 THEN 'mastered' ELSE 'practice' END,ga.completed_at
+       FROM game_attempts ga JOIN users u ON u.id=ga.user_id
+       WHERE u.role='student' AND ga.academic_year_id=? {student_clause}
+       ORDER BY completed_at DESC LIMIT ?''', params + [year_id] + ([student_id] if student_id else []) + [limit]).fetchall()
+    return rows
+
+
+@bp.route('/admin/assignments', methods=['POST'])
+@login_required(role=('admin','parent'))
+def create_assignment():
+    db=get_db(); student_id=request.form.get('student_id',type=int)
+    if not student_id or not db.execute("SELECT 1 FROM users WHERE id=? AND role='student' AND active=1",(student_id,)).fetchone(): abort(400)
+    if session.get('role')=='parent' and not can_view_student(student_id): abort(403)
+    lesson_id=request.form.get('lesson_id',type=int); module_id=request.form.get('module_id',type=int)
+    target_type=request.form.get('target_type','module')
+    if target_type=='lesson': module_id=None
+    else: lesson_id=None
+    if bool(lesson_id)==bool(module_id):
+        flash('Choose exactly one module or lesson to assign.')
+        return redirect(request.referrer or url_for('main.admin'))
+    if lesson_id:
+        target=db.execute('SELECT title FROM lessons WHERE id=?',(lesson_id,)).fetchone()
+    else:
+        target=db.execute('SELECT title FROM modules WHERE id=?',(module_id,)).fetchone()
+    if not target: abort(400)
+    min_score=max(0,min(100,float(request.form.get('min_score',85) or 85)))
+    due=(request.form.get('due_date') or '').strip() or None
+    year_id=current_academic_year_id(db)
+    db.execute('''INSERT INTO assignments(created_by,student_id,lesson_id,module_id,title,due_date,min_score,academic_year_id,created_at)
+                  VALUES (?,?,?,?,?,?,?,?,?)''',(session['user_id'],student_id,lesson_id,module_id,target['title'],due,min_score,year_id,utcnow()))
+    db.commit(); flash(f"Assigned {target['title']} with a {min_score:.0f}% target.")
+    return redirect(request.referrer or url_for('main.admin'))
+
+
+@bp.route('/admin/assignments/<int:assignment_id>/archive', methods=['POST'])
+@login_required(role=('admin','parent'))
+def archive_assignment(assignment_id):
+    db=get_db(); a=db.execute('SELECT * FROM assignments WHERE id=?',(assignment_id,)).fetchone()
+    if not a: abort(404)
+    if session.get('role')=='parent' and not can_view_student(a['student_id']): abort(403)
+    db.execute('UPDATE assignments SET archived=1 WHERE id=?',(assignment_id,)); db.commit(); flash('Assignment archived.')
+    return redirect(request.referrer or url_for('main.admin'))
+
+
+@bp.route('/admin/academic-years', methods=['POST'])
+@login_required(role='admin')
+def create_academic_year():
+    db=get_db(); name=request.form.get('name','').strip(); starts=request.form.get('starts_on','').strip(); ends=request.form.get('ends_on','').strip()
+    if not name or not starts or not ends or starts>=ends:
+        flash('Enter a name and a valid start/end date range.')
+    else:
+        db.execute('INSERT OR IGNORE INTO academic_years(name,starts_on,ends_on,active) VALUES (?,?,?,0)',(name,starts,ends)); db.commit(); flash(f'Academic year {name} added.')
+    return redirect(url_for('main.admin'))
+
+
+@bp.route('/admin/academic-years/<int:year_id>/activate', methods=['POST'])
+@login_required(role='admin')
+def activate_academic_year(year_id):
+    db=get_db()
+    if not db.execute('SELECT 1 FROM academic_years WHERE id=?',(year_id,)).fetchone(): abort(404)
+    db.execute('UPDATE academic_years SET active=0'); db.execute('UPDATE academic_years SET active=1 WHERE id=?',(year_id,)); db.commit(); flash('Active academic year changed. New grades and assignments will use it.')
+    return redirect(url_for('main.admin'))
+
+
+@bp.route('/admin/gradebook')
+@login_required(role=('admin','parent'))
+def academic_gradebook():
+    db=get_db(); year_id=request.args.get('year_id',type=int) or current_academic_year_id(db); student_id=request.args.get('student_id',type=int)
+    if session.get('role')=='parent':
+        if not student_id or not can_view_student(student_id): abort(403)
+        years=db.execute('''SELECT DISTINCT ay.* FROM academic_years ay LEFT JOIN grade_events g ON g.academic_year_id=ay.id AND g.user_id=?
+                            LEFT JOIN game_attempts ga ON ga.academic_year_id=ay.id AND ga.user_id=?
+                            WHERE g.id IS NOT NULL OR ga.id IS NOT NULL OR ay.active=1 ORDER BY ay.starts_on DESC''',(student_id,student_id)).fetchall()
+        students=db.execute('SELECT u.id,u.display_name FROM users u JOIN parent_student_links p ON p.student_id=u.id WHERE p.parent_id=? ORDER BY u.display_name',(session['user_id'],)).fetchall()
+    else:
+        years=db.execute('SELECT * FROM academic_years ORDER BY starts_on DESC').fetchall(); students=db.execute("SELECT id,display_name FROM users WHERE role='student' ORDER BY display_name").fetchall()
+    year=db.execute('SELECT * FROM academic_years WHERE id=?',(year_id,)).fetchone()
+    rows=gradebook_for_year(year_id,student_id)
+    return render_template('gradebook.html',year=year,years=years,rows=rows,students=students,student_id=student_id)
